@@ -1,1 +1,1 @@
-pushd public && emcc ..\cpp\index.cpp -s WASM=1 -o index.js && popd
+pushd public && emcc ..\cpp\index.cpp -s WASM=1 -o index.js -s NO_EXIT_RUNTIME=1  -s "EXTRA_EXPORTED_RUNTIME_METHODS=['ccall']" && popd
