@@ -1,0 +1,1 @@
+pushd public && emcc ..\cpp\index.cpp -s WASM=1 -o index.html && popd

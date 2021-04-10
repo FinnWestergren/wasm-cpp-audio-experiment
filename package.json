@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "deploy": "http-server -o -c-1"
+  },
+  "dependencies": {
+    "http-server": "^0.12.3"
+  }
+}

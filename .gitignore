@@ -30,3 +30,9 @@
 *.exe
 *.out
 *.app
+
+# Installed Libraries
+node_modules/*
+
+# Wasm binary
+*.wasm
