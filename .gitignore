@@ -34,5 +34,9 @@
 # Installed Libraries
 node_modules/*
 
+# Compiled Files
+*.mm
+cpp/*/Builds/*
+
 # Wasm binary
 *.wasm

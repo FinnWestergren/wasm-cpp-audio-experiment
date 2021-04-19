@@ -4,7 +4,8 @@
 extern "C" {
 #endif
 
-EMSCRIPTEN_KEEPALIVE int myCustomAddMethod(int a, int b) {
+EMSCRIPTEN_KEEPALIVE 
+int myCustomAddMethod(int a, int b) {
     return a + b;
 }
 
