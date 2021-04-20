@@ -3,22 +3,16 @@
 //==============================================================================
 MainComponent::MainComponent()
 {
-    // Make sure you set the size of the component after
-    // you add any child components.
-    setSize (800, 600);
+    setSize (500, 500);
+    setAudioChannels (0, 2);
+    initSlider(&levelSlider, "Level", new juce::Range<double>(0, 0.1), 0.001);
+    initSlider(&frequencySlider, "Freq", new juce::Range<double>(20, 1000), 1);
 
-    // Some platforms require permissions to open input channels so request that here
-    if (juce::RuntimePermissions::isRequired (juce::RuntimePermissions::recordAudio)
-        && ! juce::RuntimePermissions::isGranted (juce::RuntimePermissions::recordAudio))
+    frequencySlider.onValueChange = [this]
     {
-        juce::RuntimePermissions::request (juce::RuntimePermissions::recordAudio,
-                                           [&] (bool granted) { setAudioChannels (granted ? 2 : 0, 2); });
-    }
-    else
-    {
-        // Specify the number of input and output channels that we want to open
-        setAudioChannels (2, 2);
-    }
+        if (currentSampleRate > 0.0)
+            updateAngleDelta();
+    };
 }
 
 MainComponent::~MainComponent()
@@ -30,24 +24,23 @@ MainComponent::~MainComponent()
 //==============================================================================
 void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRate)
 {
-    // This function will be called when the audio device is started, or when
-    // its settings (i.e. sample rate, block size, etc) are changed.
-
-    // You can use this function to initialise any resources you might need,
-    // but be careful - it will be called on the audio thread, not the GUI thread.
-
-    // For more details, see the help for AudioProcessor::prepareToPlay()
+    currentSampleRate = sampleRate;
+    updateAngleDelta();
 }
 
 void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill)
 {
-    // Your audio-processing code goes here!
+    auto level = (float) (levelSlider.getValue());
+    auto* leftBuffer = bufferToFill.buffer->getWritePointer(0, bufferToFill.startSample);
+    auto* rightBuffer = bufferToFill.buffer->getWritePointer(1, bufferToFill.startSample);
 
-    // For more details, see the help for AudioProcessor::getNextAudioBlock()
-
-    // Right now we are not producing any data, in which case we need to clear the buffer
-    // (to prevent the output of random noise)
-    bufferToFill.clearActiveBufferRegion();
+    for (auto sample = 0; sample < bufferToFill.numSamples; ++sample)
+    {
+        auto currentSample = (float)std::sin(currentAngle);
+        currentAngle += angleDelta;
+        leftBuffer[sample] = currentSample * level;
+        rightBuffer[sample] = currentSample * level;
+    }
 }
 
 void MainComponent::releaseResources()
@@ -69,7 +62,29 @@ void MainComponent::paint (juce::Graphics& g)
 
 void MainComponent::resized()
 {
-    // This is called when the MainContentComponent is resized.
-    // If you add any child components, this is where you should
-    // update their positions.
+    auto margin = 15;
+    levelSlider.setBounds(margin, margin, getWidth() - margin * 2, margin * 2);
+    frequencySlider.setBounds(margin, margin * 3, getHeight() - margin * 2, margin * 2);
 }
+
+void MainComponent::updateAngleDelta()
+{
+    auto cyclesPerSample = frequencySlider.getValue() / currentSampleRate;  
+    angleDelta = cyclesPerSample * 2.0 * juce::MathConstants<double>::pi;   
+}
+
+void MainComponent::initSlider(juce::Slider* slider, juce::String label, juce::Range<double>* range, double interval)
+{
+    // these define the parameters of our slider object
+    slider->setSliderStyle(juce::Slider::LinearHorizontal);
+    slider->setRange(*range, interval);
+    slider->setTextBoxStyle(juce::Slider::TextBoxAbove, false, 90, 0);
+    slider->setPopupDisplayEnabled(true, false, this);
+    slider->setTextValueSuffix(label);
+    slider->setValue((slider->getMaximum() - slider->getMinimum()) * 0.5);
+
+    // this function adds the slider to the editor
+    addAndMakeVisible(slider);
+}
+
+
