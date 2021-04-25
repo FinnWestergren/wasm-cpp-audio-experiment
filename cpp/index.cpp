@@ -34,6 +34,37 @@ unsigned query_sample_rate_of_audiocontexts() {
     });
 }
 
+bool check_al_errors()
+{
+    ALenum error = alGetError();
+    if(error != AL_NO_ERROR)
+    {
+        switch(error)
+        {
+        case AL_INVALID_NAME:
+            std::cerr << "AL_INVALID_NAME: a bad name (ID) was passed to an OpenAL function";
+            break;
+        case AL_INVALID_ENUM:
+            std::cerr << "AL_INVALID_ENUM: an invalid enum value was passed to an OpenAL function";
+            break;
+        case AL_INVALID_VALUE:
+            std::cerr << "AL_INVALID_VALUE: an invalid value was passed to an OpenAL function";
+            break;
+        case AL_INVALID_OPERATION:
+            std::cerr << "AL_INVALID_OPERATION: the requested operation is not valid";
+            break;
+        case AL_OUT_OF_MEMORY:
+            std::cerr << "AL_OUT_OF_MEMORY: the requested operation resulted in OpenAL running out of memory";
+            break;
+        default:
+            std::cerr << "UNKNOWN AL ERROR: " << error;
+        }
+        std::cerr << std::endl;
+        return false;
+    }
+    return true;
+}
+
 // this gets called once every (BUFFER_SIZE/systemSampleRate) seconds. It fills a buffer with BUFFER_SIZE samples and sends that buffer to the DAC.
 void audioLoop() {
     auto currentTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
@@ -54,7 +85,7 @@ void audioLoop() {
         alGetSourcei(source, AL_SOURCE_STATE, &source_state);
     }
     alDeleteBuffers(1, &buffer);
-    std::cout << currentTime << std::endl;
+    check_al_errors();
 }
 
 int main() {
@@ -71,7 +102,6 @@ int main() {
         std::cout << "couldn't use context!" << std::endl;
         return 1;
     }
-    alSourcef(source, AL_MAX_GAIN, 0.2);
     emscripten_set_main_loop(audioLoop, systemSampleRate / BUFFER_SIZE, 1);
     return 0;
 }

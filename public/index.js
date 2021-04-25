@@ -1686,7 +1686,7 @@ var tempI64;
 // === Body ===
 
 var ASM_CONSTS = {
-  15056: function() {var AudioContext = window.AudioContext || window.webkitAudioContext; var ctx = new AudioContext(); var sr = ctx.sampleRate; ctx.close(); return sr;}
+  15424: function() {var AudioContext = window.AudioContext || window.webkitAudioContext; var ctx = new AudioContext(); var sr = ctx.sampleRate; ctx.close(); return sr;}
 };
 
 
@@ -3925,6 +3925,17 @@ var ASM_CONSTS = {
       }
     }
 
+  function _alGetError() {
+      if (!AL.currentCtx) {
+        return 0xA004 /* AL_INVALID_OPERATION */;
+      } else {
+        // Reset error on get.
+        var err = AL.currentCtx.err;
+        AL.currentCtx.err = 0 /* AL_NO_ERROR */;
+        return err;
+      }
+    }
+
   function _alGetSourcei(sourceId, param, pValue) {
       var val = AL.getSourceParam('alGetSourcei', sourceId, param);
       if (val === null) {
@@ -3973,30 +3984,6 @@ var ASM_CONSTS = {
         return;
       }
       AL.setSourceState(src, 0x1012 /* AL_PLAYING */);
-    }
-
-  function _alSourcef(sourceId, param, value) {
-      switch (param) {
-      case 0x1001 /* AL_CONE_INNER_ANGLE */:
-      case 0x1002 /* AL_CONE_OUTER_ANGLE */:
-      case 0x1003 /* AL_PITCH */:
-      case 0x100A /* AL_GAIN */:
-      case 0x100D /* AL_MIN_GAIN */:
-      case 0x100E /* AL_MAX_GAIN */:
-      case 0x1020 /* AL_REFERENCE_DISTANCE */:
-      case 0x1021 /* AL_ROLLOFF_FACTOR */:
-      case 0x1022 /* AL_CONE_OUTER_GAIN */:
-      case 0x1023 /* AL_MAX_DISTANCE */:
-      case 0x1024 /* AL_SEC_OFFSET */:
-      case 0x1025 /* AL_SAMPLE_OFFSET */:
-      case 0x1026 /* AL_BYTE_OFFSET */:
-      case 0x200B /* AL_SEC_LENGTH_SOFT */:
-        AL.setSourceParam('alSourcef', sourceId, param, value);
-        break;
-      default:
-        AL.setSourceParam('alSourcef', sourceId, param, null);
-        break;
-      }
     }
 
   function _alSourcei(sourceId, param, value) {
@@ -7223,9 +7210,9 @@ var asmLibraryArg = {
   "abort": _abort,
   "alBufferData": _alBufferData,
   "alDeleteBuffers": _alDeleteBuffers,
+  "alGetError": _alGetError,
   "alGetSourcei": _alGetSourcei,
   "alSourcePlay": _alSourcePlay,
-  "alSourcef": _alSourcef,
   "alSourcei": _alSourcei,
   "alcCreateContext": _alcCreateContext,
   "alcMakeContextCurrent": _alcMakeContextCurrent,
