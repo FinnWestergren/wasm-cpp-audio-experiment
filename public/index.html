@@ -6,29 +6,6 @@
   </head>
   <body>
 </span>
-    <input id="int_a" type="number" value=0/>
-    +
-    <input id="int_b" type="number" value=0/>
-    =
-    <span id="output">0</span>
-    <script type='text/javascript'>
-      function onChange () {
-        Module.ccall(
-            'setC',	
-            undefined,	// return type
-            [Number, Number],	// argument types
-            [document.getElementById('int_a').value, document.getElementById('int_b').value] // arguments
-        );
-        document.getElementById('output').innerText = Module.ccall(
-            'getC',	// name of C function
-            Number,	// return type
-            [],	// argument types
-            [] // arguments
-        );
-      }
-      document.getElementById('int_a').addEventListener("change", onChange);
-      document.getElementById('int_b').addEventListener("change", onChange);
-    </script>
     <script async type="text/javascript" src="index.js"></script>
   </body>
 </html>
