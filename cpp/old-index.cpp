@@ -8,7 +8,6 @@
 #include <chrono>
 #include <sys/time.h>
 #include <ctime>
-#include <fstream> 
 
 using std::chrono::milliseconds;
 using std::chrono::system_clock;
@@ -16,17 +15,13 @@ using std::chrono::system_clock;
 extern "C" {
 #endif
 
-static const unsigned BUFFER_SIZE = 2048;
-static const unsigned BUFFER_COUNT = 16;
+static const unsigned BUFFER_SIZE = 200;
 static const short BIT_DEPTH = 16;
-static const ALenum SAMPLE_FORMAT = AL_FORMAT_MONO16;
-static ALuint buffers[BUFFER_COUNT];
-static short writeIndex = 0;
-static short readIndex = 0;
-
+static const ALenum SAMPLE_FORMAT = AL_FORMAT_MONO16 ;
 unsigned systemSampleRate = 44100;
 ALCdevice *device;
 ALCcontext *context;
+static unsigned bufferData [BUFFER_SIZE]; // array of samples we can write to over and over again
 ALuint source;
 
 unsigned query_sample_rate_of_audiocontexts() {
@@ -70,17 +65,6 @@ bool print_al_errors(int number)
     return true;
 }
 
-void fillBuffer() {
-    auto currentTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-    srand (currentTime);
-    // create random samples for white noise
-    for (int index = 0; index < BUFFER_SIZE; index++) {
-        short value = (short) rand() % 0xFFFF; // 16 bit number
-        bufferData[index] = value;
-    }
-    ALuint *buffer = buffers[writeIndex++];
-    alBufferData(*buffer, SAMPLE_FORMAT, bufferData, BUFFER_SIZE, systemSampleRate);
-}
 
 void printBuffer() {
     for(int index = 0; index < BUFFER_SIZE; index++) std::cout << bufferData[index] << std::endl;
@@ -88,7 +72,14 @@ void printBuffer() {
 
 // this gets called once every (BUFFER_SIZE/systemSampleRate) seconds. It fills a buffer with BUFFER_SIZE samples and sends that buffer to the DAC.
 void audioLoop() {
-    fillBuffer();
+    auto currentTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+    srand (currentTime); // init rando with a seed based on the index and the current time
+    // create random samples for white noise
+    for (int index = 0; index < BUFFER_SIZE; index++) {
+        unsigned value = (unsigned) rand() % 0xFFFF; // 16 bit number
+        bufferData[index] = value;
+    }
+    ALuint buffer;
     alBufferData(buffer, SAMPLE_FORMAT, bufferData, BUFFER_SIZE, systemSampleRate);
     print_al_errors(0);
     alSourcei(source, AL_BUFFER, buffer);
@@ -113,8 +104,8 @@ int main() {
         return 1;
     }
     alGenSources((ALuint)1, &source);
-    //emscripten_set_main_loop(audioLoop, systemSampleRate / BUFFER_SIZE, 1);
-    emscripten_set_main_loop(audioLoop, 1, 1);
+    emscripten_set_main_loop(audioLoop, systemSampleRate / BUFFER_SIZE, 1);
+    //emscripten_set_main_loop(audioLoop, 1, 1);
     // audioLoop();
     // printBuffer();
     return 0;
