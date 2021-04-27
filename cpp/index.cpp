@@ -8,6 +8,7 @@
 #include <chrono>
 #include <sys/time.h>
 #include <ctime>
+#include <fstream> 
 
 using std::chrono::milliseconds;
 using std::chrono::system_clock;
@@ -34,7 +35,7 @@ unsigned query_sample_rate_of_audiocontexts() {
     });
 }
 
-bool check_al_errors()
+bool print_al_errors(int number)
 {
     ALenum error = alGetError();
     if(error != AL_NO_ERROR)
@@ -59,33 +60,37 @@ bool check_al_errors()
         default:
             std::cerr << "UNKNOWN AL ERROR: " << error;
         }
-        std::cerr << std::endl;
+        std::cerr << " number: " << number << std::endl;
         return false;
     }
     return true;
 }
 
-// this gets called once every (BUFFER_SIZE/systemSampleRate) seconds. It fills a buffer with BUFFER_SIZE samples and sends that buffer to the DAC.
-void audioLoop() {
+void fillBuffer() {
     auto currentTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+    srand (currentTime);
     // create random samples for white noise
     for (int index = 0; index < BUFFER_SIZE; index++) {
-        srand (currentTime + index); // init rando with a seed based on the index and the current time
         short value = (short) rand() % 0xFFFF; // 16 bit number
         bufferData[index] = value;
     }
+}
+
+void printBuffer() {
+    for(int index = 0; index < BUFFER_SIZE; index++) std::cout << bufferData[index] << std::endl;
+}
+
+// this gets called once every (BUFFER_SIZE/systemSampleRate) seconds. It fills a buffer with BUFFER_SIZE samples and sends that buffer to the DAC.
+void audioLoop() {
+    fillBuffer();
     ALuint buffer;
     alBufferData(buffer, SAMPLE_FORMAT, bufferData, BUFFER_SIZE, systemSampleRate);
+    print_al_errors(0);
     alSourcei(source, AL_BUFFER, buffer);
+    print_al_errors(1);
     alSourcePlay(source);
-
-	ALint source_state;
-    alGetSourcei(source, AL_SOURCE_STATE, &source_state);
-    while (source_state == AL_PLAYING) {
-        alGetSourcei(source, AL_SOURCE_STATE, &source_state);
-    }
+    print_al_errors(2);
     alDeleteBuffers(1, &buffer);
-    check_al_errors();
 }
 
 int main() {
@@ -102,6 +107,7 @@ int main() {
         std::cout << "couldn't use context!" << std::endl;
         return 1;
     }
+    alGenSources((ALuint)1, &source);
     emscripten_set_main_loop(audioLoop, systemSampleRate / BUFFER_SIZE, 1);
     return 0;
 }

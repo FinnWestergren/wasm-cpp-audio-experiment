@@ -1686,7 +1686,7 @@ var tempI64;
 // === Body ===
 
 var ASM_CONSTS = {
-  15424: function() {var AudioContext = window.AudioContext || window.webkitAudioContext; var ctx = new AudioContext(); var sr = ctx.sampleRate; ctx.close(); return sr;}
+  15440: function() {var AudioContext = window.AudioContext || window.webkitAudioContext; var ctx = new AudioContext(); var sr = ctx.sampleRate; ctx.close(); return sr;}
 };
 
 
@@ -3925,6 +3925,52 @@ var ASM_CONSTS = {
       }
     }
 
+  function _alGenSources(count, pSourceIds) {
+      if (!AL.currentCtx) {
+        return;
+      }
+      for (var i = 0; i < count; ++i) {
+        var gain = AL.currentCtx.audioCtx.createGain();
+        gain.connect(AL.currentCtx.gain);
+        var src = {
+          context: AL.currentCtx,
+          id: AL.newId(),
+          type: 0x1030 /* AL_UNDETERMINED */,
+          state: 0x1011 /* AL_INITIAL */,
+          bufQueue: [AL.buffers[0]],
+          audioQueue: [],
+          looping: false,
+          pitch: 1.0,
+          dopplerShift: 1.0,
+          gain: gain,
+          minGain: 0.0,
+          maxGain: 1.0,
+          panner: null,
+          bufsProcessed: 0,
+          bufStartTime: Number.NEGATIVE_INFINITY,
+          bufOffset: 0.0,
+          relative: false,
+          refDistance: 1.0,
+          maxDistance: 3.40282e38 /* FLT_MAX */,
+          rolloffFactor: 1.0,
+          position: [0.0, 0.0, 0.0],
+          velocity: [0.0, 0.0, 0.0],
+          direction: [0.0, 0.0, 0.0],
+          coneOuterGain: 0.0,
+          coneInnerAngle: 360.0,
+          coneOuterAngle: 360.0,
+          distanceModel: 0xd002 /* AL_INVERSE_DISTANCE_CLAMPED */,
+          spatialize: 2 /* AL_AUTO_SOFT */,
+  
+          get playbackRate() {
+            return this.pitch * this.dopplerShift;
+          }
+        };
+        AL.currentCtx.sources[src.id] = src;
+        HEAP32[(((pSourceIds)+(i*4))>>2)] = src.id;
+      }
+    }
+
   function _alGetError() {
       if (!AL.currentCtx) {
         return 0xA004 /* AL_INVALID_OPERATION */;
@@ -3933,44 +3979,6 @@ var ASM_CONSTS = {
         var err = AL.currentCtx.err;
         AL.currentCtx.err = 0 /* AL_NO_ERROR */;
         return err;
-      }
-    }
-
-  function _alGetSourcei(sourceId, param, pValue) {
-      var val = AL.getSourceParam('alGetSourcei', sourceId, param);
-      if (val === null) {
-        return;
-      }
-      if (!pValue) {
-        AL.currentCtx.err = 0xA003 /* AL_INVALID_VALUE */;
-        return;
-      }
-  
-      switch (param) {
-      case 0x202 /* AL_SOURCE_RELATIVE */:
-      case 0x1001 /* AL_CONE_INNER_ANGLE */:
-      case 0x1002 /* AL_CONE_OUTER_ANGLE */:
-      case 0x1007 /* AL_LOOPING */:
-      case 0x1009 /* AL_BUFFER */:
-      case 0x1010 /* AL_SOURCE_STATE */:
-      case 0x1015 /* AL_BUFFERS_QUEUED */:
-      case 0x1016 /* AL_BUFFERS_PROCESSED */:
-      case 0x1020 /* AL_REFERENCE_DISTANCE */:
-      case 0x1021 /* AL_ROLLOFF_FACTOR */:
-      case 0x1023 /* AL_MAX_DISTANCE */:
-      case 0x1024 /* AL_SEC_OFFSET */:
-      case 0x1025 /* AL_SAMPLE_OFFSET */:
-      case 0x1026 /* AL_BYTE_OFFSET */:
-      case 0x1027 /* AL_SOURCE_TYPE */:
-      case 0x1214 /* AL_SOURCE_SPATIALIZE_SOFT */:
-      case 0x2009 /* AL_BYTE_LENGTH_SOFT */: 
-      case 0x200A /* AL_SAMPLE_LENGTH_SOFT */:
-      case 0xD000 /* AL_DISTANCE_MODEL */:
-        HEAP32[((pValue)>>2)] = val;
-        break;
-      default:
-        AL.currentCtx.err = 0xA002 /* AL_INVALID_ENUM */;
-        return;
       }
     }
 
@@ -7210,8 +7218,8 @@ var asmLibraryArg = {
   "abort": _abort,
   "alBufferData": _alBufferData,
   "alDeleteBuffers": _alDeleteBuffers,
+  "alGenSources": _alGenSources,
   "alGetError": _alGetError,
-  "alGetSourcei": _alGetSourcei,
   "alSourcePlay": _alSourcePlay,
   "alSourcei": _alSourcei,
   "alcCreateContext": _alcCreateContext,
